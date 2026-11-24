@@ -1,0 +1,12 @@
+# 可选：本地录音转写（离线、免费，但首次运行会下载模型，需要联网）
+# 单独安装，避免把大模型依赖塞进主项目：
+#   pip install -r requirements-transcribe.txt
+-r requirements.txt
+faster-whisper>=1.0
+
+# 说明：
+# - small  模型约 460MB，medium 约 1.5GB，首次转写时自动下载到 ~/.cache/huggingface
+# - 该方案只做「语音 -> 带时间戳的文字」，不自动区分说话人；
+#   若要自动说话人分离，需另外引入 pyannote 模型并申请 HuggingFace token。
+# - 更省事的做法：用外部工具（含 WorkBuddy 本机转写，支持说话人分离）转出
+#   .srt/.vtt/.json 后，直接走「导入材料」，说话人标签会保留。

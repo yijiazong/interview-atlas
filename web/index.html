@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>interview-atlas · 访谈材料整理与编码工作台</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark">訪</div>
+      <div>
+        <h1>interview-atlas</h1>
+        <p>访谈材料的区分、整理与质性编码工作台</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div id="stat-strip" class="stat-strip"></div>
+      <span class="local-badge" title="所有数据只保存在本机">本机运行 · 数据不上传</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="sidebar">
+      <button class="nav-item active" data-tab="overview"><span>▦</span> 概览</button>
+      <button class="nav-item" data-tab="materials"><span>▤</span> 材料</button>
+      <button class="nav-item" data-tab="people"><span>◉</span> 受访者</button>
+      <button class="nav-item" data-tab="coding"><span>⌗</span> 编码</button>
+      <button class="nav-item" data-tab="analysis"><span>▥</span> 检索与矩阵</button>
+      <button class="nav-item" data-tab="export"><span>⇩</span> 导出</button>
+      <button class="nav-item" data-tab="settings"><span>⚙</span> 设置</button>
+      <div class="sidebar-foot">
+        <p><strong>提示</strong></p>
+        <p>访谈原文保存在 <code>data/</code>，gitignore 已排除，不会误传到仓库。</p>
+        <p>引用请用「段落编号」，可在引语汇编里核对出处。</p>
+      </div>
+    </nav>
+
+    <main class="main">
+
+      <!-- 概览 -->
+      <section class="panel active" id="panel-overview">
+        <div class="panel-head"><h2>项目概览</h2><p class="sub">当前库里的材料与编码进度</p></div>
+        <div id="overview-stats" class="stat-grid"></div>
+        <div class="two-col">
+          <div class="card">
+            <h3>三步开始</h3>
+            <ol class="steps">
+              <li><b>导入材料</b> — 在「材料」页拖入 Word / PDF / txt 逐字稿，或整文件夹批量导入。系统按文件名推断编号、日期、轮次，并切成带编号的段落。</li>
+              <li><b>区分与脱敏</b> — 在「受访者」页确认归属与阶段，维护真实姓名→化名映射，一键应用到全部原文。</li>
+              <li><b>编码与导出</b> — 在「编码」页建码本、给段落打码；用「检索与矩阵」看分布；在「导出」页拿清单、交叉表、引语汇编。</li>
+            </ol>
+          </div>
+          <div class="card">
+            <h3>最近导入的材料</h3>
+            <div id="overview-docs" class="compact-list"></div>
+          </div>
+        </div>
+        <div class="card notice">
+          <h3>关于「可核查」</h3>
+          <p>每个段落都有唯一编号（如 <code>P01-003</code>）。检索结果、交叉矩阵、引语汇编都带受访者编号、材料标题、访谈日期与阶段，写论文时可直接回溯核对。系统不对原文做润色、缩写或自动摘要。</p>
+        </div>
+      </section>
+
+      <!-- 材料 -->
+      <section class="panel" id="panel-materials">
+        <div class="panel-head"><h2>材料导入与整理</h2><p class="sub">支持 .docx .pdf .txt .md .csv .xlsx .srt .vtt .json</p></div>
+
+        <div class="card">
+          <h3>导入文件</h3>
+          <div id="dropzone" class="dropzone">
+            <div class="dz-icon">⇧</div>
+            <div><b>把访谈稿拖到这里</b>，或 <label class="link" for="file-input">点击选择文件</label></div>
+            <input id="file-input" type="file" multiple hidden>
+            <p class="muted small">可一次选多份；原件会复制一份到 data/sources/ 便于备份。</p>
+          </div>
+          <div class="form-row">
+            <label class="field"><span>归入阶段</span><select id="import-stage"></select></label>
+            <label class="field"><span>指定受访者编号（可留空）</span><input id="import-code" placeholder="如 P01；留空则按文件名推断"></label>
+            <button id="btn-import" class="btn primary">导入</button>
+          </div>
+          <div id="import-result" class="result-box"></div>
+        </div>
+
+        <div class="card">
+          <h3>整文件夹批量导入</h3>
+          <p class="muted small">只扫描该文件夹一层（不递归），按文件名自动推断编号与日期。</p>
+          <div class="form-row">
+            <label class="field grow"><span>文件夹绝对路径</span><input id="folder-path" placeholder="例：C:\Users\…\访谈转录"></label>
+            <label class="field"><span>阶段</span><select id="folder-stage"></select></label>
+            <button id="btn-folder" class="btn">批量导入</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>材料清单</h3><button id="btn-refresh-docs" class="btn ghost small">刷新</button></div>
+          <div id="docs-table" class="table-wrap"></div>
+        </div>
+
+        <div class="card hidden" id="doc-detail-card">
+          <div class="card-head">
+            <h3 id="doc-detail-title">段落浏览</h3>
+            <div class="inline-actions">
+              <select id="bulk-speaker" class="mini-select">
+                <option value="interviewee">全部标为受访者</option>
+                <option value="interviewer">全部标为访谈者</option>
+                <option value="unknown">全部标为未标注</option>
+              </select>
+              <button id="btn-bulk-speaker" class="btn ghost small">应用</button>
+              <button id="btn-close-detail" class="btn ghost small">收起</button>
+            </div>
+          </div>
+          <p class="muted small">双击段落文字可直接校对转写错字；改完点「保存」。删除段落会同时删掉它的编码记录。</p>
+          <div id="doc-segments"></div>
+        </div>
+      </section>
+
+      <!-- 受访者 -->
+      <section class="panel" id="panel-people">
+        <div class="panel-head"><h2>受访者与脱敏</h2><p class="sub">区分材料归属、维护匿名化映射</p></div>
+        <div class="card">
+          <h3 id="person-form-title">新增受访者</h3>
+          <div class="form-grid">
+            <label class="field"><span>编号</span><input id="p-code" placeholder="留空自动分配 P0x"></label>
+            <label class="field"><span>化名</span><input id="p-alias" placeholder="如 受访者A"></label>
+            <label class="field"><span>身份/岗位</span><input id="p-role" placeholder="如 店长"></label>
+            <label class="field"><span>单位</span><input id="p-org" placeholder="如 某门店"></label>
+            <label class="field"><span>阶段</span><select id="p-stage"></select></label>
+            <label class="field"><span>访谈日期</span><input id="p-date" placeholder="YYYY-MM-DD"></label>
+            <label class="field"><span>轮次</span><input id="p-wave" type="number" min="1" value="1"></label>
+            <label class="field"><span>备注</span><input id="p-note"></label>
+          </div>
+          <div class="form-row">
+            <button id="btn-person-save" class="btn primary">保存</button>
+            <button id="btn-person-reset" class="btn ghost">清空表单</button>
+            <span id="person-edit-hint" class="muted small"></span>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>受访者列表</h3>
+          <div id="people-table" class="table-wrap"></div>
+        </div>
+
+        <div class="card">
+          <h3>脱敏映射（真实姓名 → 化名/代号）</h3>
+          <p class="muted small">系统不会自动猜姓名。请手动登记要替换的词，先预览，再应用到全部原文与材料标题。<b>替换会改写已入库文本且不可撤销</b>，建议先在「导出」页做一次整包备份。</p>
+          <div class="form-row">
+            <label class="field"><span>原文中的写法</span><input id="alias-real" placeholder="如 张三"></label>
+            <label class="field"><span>替换为</span><input id="alias-repl" placeholder="如 受访者A"></label>
+            <button id="btn-alias-add" class="btn">添加映射</button>
+            <button id="btn-alias-apply" class="btn danger">应用到全部原文</button>
+          </div>
+          <div id="alias-table" class="table-wrap"></div>
+          <div id="alias-result" class="result-box"></div>
+        </div>
+      </section>
+
+      <!-- 编码 -->
+      <section class="panel" id="panel-coding">
+        <div class="panel-head"><h2>质性编码</h2><p class="sub">选中段落 → 点码号打码；可多选段落批量打码</p></div>
+        <div class="coding-layout">
+          <div class="card">
+            <div class="form-row">
+              <label class="field grow"><span>材料</span><select id="coding-doc"></select></label>
+              <label class="field"><span>筛选</span><select id="coding-filter">
+                <option value="all">全部段落</option>
+                <option value="uncoded">仅未编码</option>
+              </select></label>
+              <label class="field"><span>关键词</span><input id="coding-q" placeholder="可选"></label>
+              <button id="btn-coding-load" class="btn">载入</button>
+            </div>
+            <div class="form-row small-row">
+              <button id="btn-select-all" class="btn ghost small">全选</button>
+              <button id="btn-select-none" class="btn ghost small">清空选择</button>
+              <span id="coding-selection" class="muted small"></span>
+            </div>
+            <div id="coding-segments" class="segment-list"></div>
+          </div>
+
+          <div class="coding-side">
+            <div class="card">
+              <h3>码本</h3>
+              <div class="form-row">
+                <label class="field grow"><span>新码号名称</span><input id="code-name" placeholder="如 情感连带"></label>
+                <button id="btn-code-add" class="btn primary small">添加</button>
+              </div>
+              <label class="field"><span>定义 / 纳入标准（可选）</span><input id="code-def" placeholder="写清楚什么算、什么不算"></label>
+              <div id="code-list" class="code-list"></div>
+              <p class="muted small">点码号 = 给左侧选中的段落打码；段落上已有的码号再点一次可取消（单个段落时）。</p>
+            </div>
+            <div class="card">
+              <h3>选中段落</h3>
+              <div id="coding-current" class="muted">尚未选择段落。</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 检索与矩阵 -->
+      <section class="panel" id="panel-analysis">
+        <div class="panel-head"><h2>检索与交叉矩阵</h2><p class="sub">按码号、关键词、受访者、阶段找原话；看码号在时间维度上的分布</p></div>
+        <div class="card">
+          <h3>段落检索</h3>
+          <div class="form-grid">
+            <label class="field"><span>关键词</span><input id="search-q" placeholder="原文中包含…"></label>
+            <label class="field"><span>受访者</span><select id="search-person"></select></label>
+            <label class="field"><span>阶段</span><select id="search-stage"></select></label>
+            <label class="field"><span>说话人</span><select id="search-speaker">
+              <option value="">全部</option>
+              <option value="interviewee">受访者</option>
+              <option value="interviewer">访谈者</option>
+              <option value="unknown">未标注</option>
+            </select></label>
+          </div>
+          <div class="field"><span>码号（点选，可多选；命中任一即返回）</span><div id="search-codes" class="chip-row"></div></div>
+          <button id="btn-search" class="btn primary">检索</button>
+          <div id="search-result" class="result-box"></div>
+          <div id="search-list" class="segment-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <h3>交叉矩阵</h3>
+            <label class="field inline"><span>行维度</span><select id="matrix-rows">
+              <option value="interviewee">受访者</option>
+              <option value="stage">阶段</option>
+              <option value="wave">访谈轮次</option>
+              <option value="year">访谈年份</option>
+              <option value="speaker">说话人</option>
+            </select></label>
+          </div>
+          <p class="muted small">单元格 = 该行对象中命中该码号的<b>段落数</b>（不是字数、不是人数）。空行表示该行尚无编码记录。</p>
+          <div id="matrix-table" class="table-wrap"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-head"><h3>分组频次</h3><label class="field inline"><span>分组</span><select id="freq-group">
+            <option value="stage">阶段</option>
+            <option value="year">访谈年份</option>
+            <option value="interviewee">受访者</option>
+            <option value="wave">访谈轮次</option>
+          </select></label></div>
+          <div id="freq-table" class="table-wrap"></div>
+        </div>
+      </section>
+
+      <!-- 导出 -->
+      <section class="panel" id="panel-export">
+        <div class="panel-head"><h2>导出</h2><p class="sub">CSV 为 UTF-8 BOM，Windows 上双击直接用 Excel 打开</p></div>
+        <div class="card">
+          <h3>生成导出文件</h3>
+          <div class="export-grid">
+            <div class="export-item"><b>材料清单</b><p class="muted small">一份访谈一行，含编号、阶段、段落数、编码进度</p>
+              <button class="btn small" data-export="inventory" data-fmt="csv">CSV</button>
+              <button class="btn small" data-export="inventory" data-fmt="xlsx">XLSX</button></div>
+            <div class="export-item"><b>全部段落</b><p class="muted small">段落编号、说话人、原文、已打码号</p>
+              <button class="btn small" data-export="segments" data-fmt="csv">CSV</button>
+              <button class="btn small" data-export="segments" data-fmt="xlsx">XLSX</button></div>
+            <div class="export-item"><b>编码明细</b><p class="muted small">每段×每码一行，含编码备注与原文</p>
+              <button class="btn small" data-export="codings" data-fmt="csv">CSV</button>
+              <button class="btn small" data-export="codings" data-fmt="xlsx">XLSX</button></div>
+            <div class="export-item"><b>交叉矩阵</b><p class="muted small">行维度用「检索与矩阵」页当前选择</p>
+              <button class="btn small" data-export="matrix" data-fmt="csv">CSV</button>
+              <button class="btn small" data-export="matrix" data-fmt="xlsx">XLSX</button></div>
+            <div class="export-item"><b>引语汇编</b><p class="muted small">按码号分组，原文照录 + 完整出处</p>
+              <button class="btn small" data-export="quotations" data-fmt="md">Markdown</button>
+              <button class="btn small" data-export="quotations" data-fmt="csv">CSV</button></div>
+            <div class="export-item"><b>整包备份</b><p class="muted small">数据库 + 原始逐字稿副本，ZIP</p>
+              <button class="btn small" data-export="backup" data-fmt="zip">生成 ZIP</button></div>
+          </div>
+          <div id="export-result" class="result-box"></div>
+        </div>
+        <div class="card">
+          <div class="card-head"><h3>已生成的文件</h3><button id="btn-refresh-exports" class="btn ghost small">刷新</button></div>
+          <div id="export-list" class="table-wrap"></div>
+        </div>
+        <div class="card notice">
+          <h3>写作提示</h3>
+          <p>引语汇编里的每条原话都带「受访者编号 / 材料 / 段落号 / 访谈日期 / 阶段」。正式引用前请对照原始录音或转录稿再核一次；本工具不替你判定引语的代表性，也不生成分析结论。</p>
+        </div>
+      </section>
+
+      <!-- 设置 -->
+      <section class="panel" id="panel-settings">
+        <div class="panel-head"><h2>设置与运行信息</h2></div>
+        <div class="card">
+          <h3>时间阶段（纵向研究分组）</h3>
+          <p class="muted small">每行一个阶段名。导入材料时可选，用于按阶段比较码号分布。</p>
+          <textarea id="settings-stages" rows="5"></textarea>
+          <button id="btn-save-stages" class="btn primary">保存阶段</button>
+          <div id="settings-result" class="result-box"></div>
+        </div>
+        <div class="card">
+          <h3>录音转写（可选模块）</h3>
+          <div id="transcribe-status" class="status-box"></div>
+          <div class="form-row">
+            <input id="media-input" type="file" accept=".mp3,.wav,.m4a,.mp4,.mov,.mkv,.flac,.ogg">
+            <label class="field"><span>模型</span><select id="model-size">
+              <option value="tiny">tiny（最快，精度低）</option>
+              <option value="base">base</option>
+              <option value="small" selected>small（推荐）</option>
+              <option value="medium">medium（更准，约 1.5GB）</option>
+            </select></label>
+            <button id="btn-transcribe" class="btn primary">转写并导入</button>
+          </div>
+          <p class="muted small">首次使用需联网下载一次模型；转写结果<b>不自动区分说话人</b>，请在「材料」页批量标注并人工核对错字。</p>
+          <p class="muted small">更省事的路径：用支持说话人分离的外部转写工具导出 .srt / .vtt / .json，再在「材料」页导入，说话人标签会保留。</p>
+        </div>
+        <div class="card">
+          <h3>路径与版本</h3>
+          <div id="settings-paths" class="kv-list"></div>
+        </div>
+        <div class="card notice">
+          <h3>研究伦理与部署边界</h3>
+          <p>服务只监听 <code>127.0.0.1</code>，不要改成 <code>0.0.0.0</code> 或部署到公网服务器。访谈原文含个人信息和机构细节，<code>data/</code> 与 <code>export/</code> 已写入 .gitignore，推送到 GitHub 前请再确认一次没有把原始材料提交进仓库。</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

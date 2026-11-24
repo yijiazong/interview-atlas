@@ -1,0 +1,32 @@
+# 运行时数据：访谈原文、数据库、上传的源文件（含隐私，绝不入库）
+data/*
+!data/.gitkeep
+export/*
+!export/.gitkeep
+*.db
+*.db-journal
+*.sqlite3
+
+# 本地转写模型缓存
+models/
+*.bin
+*.pt
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+.env
