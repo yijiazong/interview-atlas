@@ -1,12 +1,26 @@
 # interview-atlas｜访谈材料整理与编码工作台
 
-一个**只在本机运行**的 Python + 网页小工具，用来把散乱的访谈逐字稿变成可核查、可编码、可导出的材料库：  
+[![CI](https://github.com/yijiazong/interview-atlas/actions/workflows/ci.yml/badge.svg)](https://github.com/yijiazong/interview-atlas/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB)
+![License](https://img.shields.io/badge/License-MIT-green)
+![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey)
+
+一个面向质性研究的本地 Web 工具（Python + Flask + 原生 JavaScript），把散乱的访谈逐字稿变成可核查、可编码、可导出的材料库：  
 按受访者区分 → 脱敏编号 → 切成带编号的段落 → 建码本打码 → 检索与交叉矩阵 → 导出清单和引语汇编。
 
 设计上刻意守住三条：**数据不出本机**、**原文不改写**、**每条引语都能回溯到出处**。  
 工具只负责整理与记录，不替你做分析、不自动生成结论，也不自动编码。
 
-> `examples/` 里的三份"访谈稿"是**虚构演示数据**，不是真实访谈记录，不得用于论文引用。
+## 界面预览
+
+质性编码（选中段落 → 批量打码）与「受访者 × 码号」交叉矩阵（纵向上看码号分布随研究阶段的变化）：
+
+<p>
+  <img src="docs/screenshots/02-coding.png" width="49.5%" alt="质性编码：段落打码与码本" />
+  <img src="docs/screenshots/03-matrix.png" width="49.5%" alt="交叉矩阵与分组频次" />
+</p>
+
+> `examples/` 里的三份"访谈稿"与截图中使用的数据均为**虚构演示数据**，不是真实访谈记录，不得用于论文引用。
 
 ---
 
@@ -164,11 +178,11 @@ pip install -r requirements-transcribe.txt
 
 ## 六、GitHub 仓库与代码同步
 
-代码已经托管在 GitHub（私有仓库，账号 `yijiazong`）：
+代码托管在 GitHub：
 
 - 仓库地址：https://github.com/yijiazong/interview-atlas
 - 克隆：`git clone https://github.com/yijiazong/interview-atlas.git`
-- 默认分支：`main`；已配置 GitHub Actions，push / PR 时自动在 Python 3.10–3.13 跑单元测试。
+- 默认分支：`main`；GitHub Actions 在 push / PR 时自动于 Python 3.10–3.13 跑单元测试（徽章见文首）。
 
 日常改动后（网络允许 git 传输时）：
 
@@ -178,13 +192,14 @@ git add . && git commit -m "说明"
 git push
 ```
 
-**本机网络受限时的替代通道**：这台机器的代理只放行 `api.github.com`，封禁 `github.com` 的
+**网络受限环境下的替代通道**：某些代理只放行 `api.github.com`、封禁 `github.com` 的
 git 智能传输端点，`git push` 会报 `schannel ... missing close_notify` 或
 `CONNECT tunnel failed 502`。此时用仓库自带的 REST API 同步工具（走 GitHub 官方 API，
 等效于 push，重建出的提交 SHA 与本地完全一致）：
 
 ```bash
-python tools/sync_to_github.py
+python tools/sync_to_github.py            # 增量同步本地领先的提交
+python tools/sync_to_github.py --force   # 全量重建历史（改写提交后使用）
 ```
 
 前提：已安装 GitHub CLI 并完成 `gh auth login`（token 需 `repo`、`workflow` 权限）；
@@ -221,6 +236,7 @@ interview-atlas/
 │   ├── exporters.py           CSV / XLSX / Markdown / ZIP
 │   └── transcribe.py          可选 faster-whisper 转写
 ├── web/                       原生 HTML / CSS / JS 单页界面
+├── docs/screenshots/          README 界面截图（虚构演示数据）
 ├── tests/                     unittest 回归测试
 ├── tools/
 │   └── sync_to_github.py      git push 被代理阻断时的 REST API 增量同步
