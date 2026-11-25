@@ -1,7 +1,7 @@
 # 核心依赖：只处理 .txt/.md/.csv/.srt/.vtt/.json 时，仅 Flask 一项即可。
 Flask>=3.0,<4
 
-# 逐字稿解析与表格导出（你手上的 Word/PDF 逐字稿需要这两项）
+# 逐字稿解析与表格导出：Word / PDF 逐字稿解析与 .xlsx 导出分别需要以下依赖
 python-docx>=1.1
 pypdf>=5.0
 openpyxl>=3.1
